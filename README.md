@@ -15,7 +15,7 @@ lb4 controller
 Each command generates an on-screen set of prompts that allow you to customize a set of JavaScript classes to create the framework for your API.
 
 ## Getting Started
-To start using the server, if you want to use a local version of Cloudant, download the cloudant-developer container available on the Loopback website at this [link][https://loopback.io/doc/en/lb4/Deploying-to-IBM-Cloud.html]. From the Loopback docs, to run a Cloudant database locally at localhost:8080, run the following command:
+To start using the server, if you want to use a local version of Cloudant, download the cloudant-developer container available on the Loopback website at https://loopback.io/doc/en/lb4/Deploying-to-IBM-Cloud.html. From the Loopback docs, to run a Cloudant database locally at localhost:8080, run the following command:
 ```
 docker run \
       --volume cloudant:/srv \
@@ -32,7 +32,8 @@ password: pass
 For instructions on using Loopback to deploy to IBM Cloud, please see the link referenced above.
 
 Once your Cloudant database is configured, we will need to create 4 databases on your local database. See the image below to see what your database should look like once your database is ready to be used.
-
+![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/DB.png "Database after creation")
+ 
 Now that your database is fully configured, simply clone the Github repository to your local machine and run the following command at the root level of the project to install all necessary dependencies.
 ```
 npm install
