@@ -1,4 +1,4 @@
-import {Entity, model, property} from '@loopback/repository';
+import { Entity, model, property } from '@loopback/repository';
 
 @model()
 export class Cache extends Entity {
@@ -11,7 +11,8 @@ export class Cache extends Entity {
 
   @property({
     type: 'object',
-    required: true,
+    required: false,
+    default: {}
   })
   data: object;
 

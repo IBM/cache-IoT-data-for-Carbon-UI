@@ -41,7 +41,6 @@ export class CacheController {
     original[endpointPath] = newData
   }
 
-  @authenticate('BasicStrategy')
   @post('/cache', {
     responses: {
       '200': {
@@ -50,7 +49,101 @@ export class CacheController {
       },
     },
   })
-  async create(@requestBody() cache: Cache): Promise<Cache> {
+  async create(@requestBody() cache: Cache) {
+    throw new HttpErrors.Forbidden('Error: use PUT to create cache instance, not POST')
+    //return await this.cacheRepository.create(cache);
+  }
+
+  @authenticate('BasicStrategy')
+  @get('/cache/count', {
+    responses: {
+      '200': {
+        description: 'Cache model count',
+        content: { 'application/json': { schema: CountSchema } },
+      },
+    },
+  })
+  async count(
+    @param.query.object('where', getWhereSchemaFor(Cache)) where?: Where,
+  ): Promise<Count> {
+    return await this.cacheRepository.count(where);
+  }
+
+  @authenticate('BasicStrategy')
+  @get('/cache', {
+    responses: {
+      '200': {
+        description: 'Array of Cache model instances',
+        content: {
+          'application/json': {
+            schema: { type: 'array', items: { 'x-ts-type': Cache } },
+          },
+        },
+      },
+    },
+  })
+  async find(
+    @param.query.object('filter', getFilterSchemaFor(Cache)) filter?: Filter,
+  ): Promise<Cache[]> {
+    return await this.cacheRepository.find(filter);
+  }
+
+  @authenticate('BasicStrategy')
+  @patch('/cache', {
+    responses: {
+      '200': {
+        description: 'Cache PATCH success count',
+        content: { 'application/json': { schema: CountSchema } },
+      },
+    },
+  })
+  async updateAll(
+    @requestBody() cache: Cache,
+    @param.query.object('where', getWhereSchemaFor(Cache)) where?: Where,
+  ): Promise<Count> {
+    return await this.cacheRepository.updateAll(cache, where);
+  }
+
+  @authenticate('BasicStrategy')
+  @get('/cache/{id}', {
+    responses: {
+      '200': {
+        description: 'Cache model instance',
+        content: { 'application/json': { schema: { 'x-ts-type': Cache } } },
+      },
+    },
+  })
+  async findById(@param.path.number('id') id: number): Promise<Cache> {
+    return await this.cacheRepository.findById(id);
+  }
+
+  @authenticate('BasicStrategy')
+  @patch('/cache/{id}', {
+    responses: {
+      '204': {
+        description: 'Cache PATCH success',
+      },
+    },
+  })
+  async updateById(
+    @param.path.number('id') id: number,
+    @requestBody() cache: Cache,
+  ): Promise<void> {
+    await this.cacheRepository.updateById(id, cache);
+  }
+
+  @authenticate('BasicStrategy')
+  @put('/cache/{id}', {
+    responses: {
+      '204': {
+        description: 'Cache PUT success',
+      },
+    },
+  })
+  async replaceById(
+    @param.path.number('id') id: number,
+    @requestBody() cache: Cache,
+  ): Promise<void> {
     let collection = await this.collectionRespository.findById(cache.collectionID)
     let collectionToken;
     let settings;
@@ -152,100 +245,7 @@ export class CacheController {
         }
       }
     });
-    return await this.cacheRepository.create(cache);
-  }
-
-  @authenticate('BasicStrategy')
-  @get('/cache/count', {
-    responses: {
-      '200': {
-        description: 'Cache model count',
-        content: { 'application/json': { schema: CountSchema } },
-      },
-    },
-  })
-  async count(
-    @param.query.object('where', getWhereSchemaFor(Cache)) where?: Where,
-  ): Promise<Count> {
-    return await this.cacheRepository.count(where);
-  }
-
-  @authenticate('BasicStrategy')
-  @get('/cache', {
-    responses: {
-      '200': {
-        description: 'Array of Cache model instances',
-        content: {
-          'application/json': {
-            schema: { type: 'array', items: { 'x-ts-type': Cache } },
-          },
-        },
-      },
-    },
-  })
-  async find(
-    @param.query.object('filter', getFilterSchemaFor(Cache)) filter?: Filter,
-  ): Promise<Cache[]> {
-    return await this.cacheRepository.find(filter);
-  }
-
-  @authenticate('BasicStrategy')
-  @patch('/cache', {
-    responses: {
-      '200': {
-        description: 'Cache PATCH success count',
-        content: { 'application/json': { schema: CountSchema } },
-      },
-    },
-  })
-  async updateAll(
-    @requestBody() cache: Cache,
-    @param.query.object('where', getWhereSchemaFor(Cache)) where?: Where,
-  ): Promise<Count> {
-    return await this.cacheRepository.updateAll(cache, where);
-  }
-
-  @authenticate('BasicStrategy')
-  @get('/cache/{id}', {
-    responses: {
-      '200': {
-        description: 'Cache model instance',
-        content: { 'application/json': { schema: { 'x-ts-type': Cache } } },
-      },
-    },
-  })
-  async findById(@param.path.number('id') id: number): Promise<Cache> {
-    return await this.cacheRepository.findById(id);
-  }
-
-  @authenticate('BasicStrategy')
-  @patch('/cache/{id}', {
-    responses: {
-      '204': {
-        description: 'Cache PATCH success',
-      },
-    },
-  })
-  async updateById(
-    @param.path.number('id') id: number,
-    @requestBody() cache: Cache,
-  ): Promise<void> {
-    await this.cacheRepository.updateById(id, cache);
-  }
-
-  @authenticate('BasicStrategy')
-  @put('/cache/{id}', {
-    responses: {
-      '204': {
-        description: 'Cache PUT success',
-      },
-    },
-  })
-  async replaceById(
-    @param.path.number('id') id: number,
-    @requestBody() cache: Cache,
-  ): Promise<void> {
-    await this.cacheRepository.replaceById(id, cache);
+    await this.cacheRepository.replaceById(id, cache).catch(async err => { await this.cacheRepository.create(cache) });
   }
 
   @authenticate('BasicStrategy')

@@ -38,7 +38,7 @@ Now that your database is fully configured, simply clone the Github repository t
 npm install
 npm start
 ```
-With this, the server should be running at http://localhost:8080. Loopback also automatically generates a simple API explorer at http://localhost:8080/explorer.
+With this, the server should be running locally on port 3000. Loopback also automatically generates a simple API explorer at 127.0.0.1:3000/explorer.
 
 ## The API
 
@@ -55,5 +55,43 @@ Users are a simple class that we use for authentication (it will matter more onc
 Upon successful registration, you can pass your username and password in the 'Authorization' header of requests when calling the API.
 
 ### Collections
-Collections represent the "higher" level information on a collection of APIs.
+Collections represent the "higher" level information on a collection of APIs. Collections contain the following fields that are sent as JSON in the request body via POST requests:
+```
+{
+collectionID: Number
+collectionName: String
+baseURL: String (this string corresponds to the base of the API you'd like to call e.g.
+https://iotbi-customdashboard.mybluemix.net/cache/allData?api=)
+authenticationType: String (must be either Basic or Bearer)
+refreshInterval: Number (you can store how often you'd like to refresh the collection here)
+credentials: Object (must contain a field for username and password, e.g. {username: Tony.Melo1@ibm.com, password: example})
+cacheLocation: String (must be either memory or db)
+}
+```
+To create a new collection, send a POST request from Postman or using curl from terminal to the url 127.0.0.1:3000/collections with a JSON object that matches the above format (fields can be sent in any order in the object). For information on a particular collection, simply send a GET request to 127.0.0.1:3000/collections/{id}, where {id} is the ID number of the collection you would like to know more about.
+
+### Endpoints
+Endpoints are how we store the actual APIs that we will be calling. Endpoints contain similar fields to the collection they belong to, however, certain fields will be inherited from the collection if omitted at the endpoint level. To create a new Endpoint, send a POST request to 127.0.0.1:3000/endpoints with the request body of the following format:
+```
+{
+endpointID: Number
+collectionID: Number (this should correspond to an existing collection you want the endpoint to belong to)
+endpointPath: String (this corresponds to a string like /v1/estate/energy/usage that is appended to the collection's baseURL)
+credentials: Object (NOT REQUIRED, will be inherited from the collection if omitted)
+refreshInterval: Number (NOT REQUIRED, will be inherited from the collection if omitted)
+authenticationType: String (NOT REQUIRED, will be inherited from the collection if omitted)
+baseURL: String (NOT REQUIRED, will be inherited from the collection if omitted)
+endpointList: String[] (NOT REQUIRED, if you so desire, you can pass an array of endpoint paths here instead of registering paths 1 by 1)
+
+}
+```
+
+### Cache
+This class is what is used as our data store for anything retrieved from our APIs. In order to refresh the data store, you can hit 127.0.0.1:3000/cache with a PUT request with a request body of the following format:
+```
+{
+collectionID: Number (must correspond to an existing collection we'll be caching data for)
+data: (NOT REQUIRED, simply leave it empty and the API with fill it with data, or you could pass data with the same schema)
+}
+```
 
