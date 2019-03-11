@@ -1,0 +1,9 @@
+{
+  "name": "User",
+  "connector": "cloudant",
+  "url": "http://admin:pass@localhost:8080",
+  "database": "users",
+  "username": "admin",
+  "password": "pass",
+  "modelIndex": ""
+}
