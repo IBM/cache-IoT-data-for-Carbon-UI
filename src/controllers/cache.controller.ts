@@ -37,10 +37,7 @@ export class CacheController {
     @inject(AuthenticationBindings.CURRENT_USER) private user: UserProfile,
   ) { }
 
-  updateData(original, endpointPath, newData) {
-    original[endpointPath] = newData
-  }
-
+  @authenticate('BasicStrategy')
   @post('/cache', {
     responses: {
       '200': {
@@ -50,7 +47,14 @@ export class CacheController {
     },
   })
   async create(@requestBody() cache: Cache) {
-    throw new HttpErrors.Forbidden('Error: use PUT to create cache instance, not POST')
+    var newCacheInstance = await this.cacheData(cache)
+    console.log(newCacheInstance)
+    Object.assign(cache, newCacheInstance)
+    return await this.cacheRepository.create(cache)
+      .catch(async err => {
+        await this.cacheRepository.updateById(cache.collectionID, cache)
+        return cache;
+      });
     //return await this.cacheRepository.create(cache);
   }
 
@@ -122,6 +126,7 @@ export class CacheController {
     responses: {
       '204': {
         description: 'Cache PATCH success',
+        content: { 'application/json': { schema: { 'x-ts-type': Cache } } }
       },
     },
   })
@@ -129,7 +134,7 @@ export class CacheController {
     @param.path.number('id') id: number,
     @requestBody() cache: Cache,
   ): Promise<void> {
-    await this.cacheRepository.updateById(id, cache);
+    await this.cacheRepository.updateById(id, cache)
   }
 
   @authenticate('BasicStrategy')
@@ -144,9 +149,18 @@ export class CacheController {
     @param.path.number('id') id: number,
     @requestBody() cache: Cache,
   ): Promise<void> {
+    await this.cacheRepository.replaceById(id, cache);
+  }
+
+  async cacheData(cache?: Cache) {
+    if (!cache) {
+      throw new HttpErrors.PreconditionFailed("Error: invalid cache instance")
+    }
     let collection = await this.collectionRespository.findById(cache.collectionID)
     let collectionToken;
     let settings;
+    var response;
+    var jsonResponse;
     if (!collection) {
       throw new HttpErrors.BadRequest(`Error: no collection was found with ID ${cache.collectionID}`)
     }
@@ -155,7 +169,7 @@ export class CacheController {
       throw new HttpErrors.BadRequest(`Error: endpoints for collection ${cache.collectionID} could not be retrieved`)
     }
     if (collection.authenticationType.toLowerCase() === 'bearer') {
-      endpoints.forEach(async e => {
+      for (var e of endpoints) {
         if (!e) {
           throw new HttpErrors.PreconditionFailed('Error: invalid endpoint present')
         }
@@ -167,18 +181,18 @@ export class CacheController {
           if (!e.baseURL) {
             throw new HttpErrors.PreconditionFailed('Error: invalid endpoint present')
           }
-          var response = await fetch(e.baseURL.concat(e.endpointPath), settings)
-          var jsonResponse = await response.json()
+          response = await fetch(e.baseURL.concat(e.endpointPath), settings)
+          jsonResponse = await response.json()
           collectionToken = "Bearer " + jsonResponse.data.token
         }
         return;
-      });
+      };
     } else {
       var toEncode = Buffer.from(`${collection.credentials['username']}:${collection.credentials['password']}`);
       var encoded = toEncode.toString('base64');
       collectionToken = "Basic " + encoded;
     }
-    endpoints.forEach(e => {
+    for (var e of endpoints) {
       if (!e) {
         throw new HttpErrors.PreconditionFailed('Error: invalid endpoint present')
       }
@@ -203,21 +217,20 @@ export class CacheController {
           }
         }
 
-        fetch(e.baseURL.concat(e.endpointPath), settings)
-          .then(response => response.json())
-          .then(response => this.updateData(cache.data, e.endpointPath, response))
-          .catch(error => console.log('Error: ', error))
-
+        response = await fetch(e.baseURL.concat(e.endpointPath), settings)
+        jsonResponse = await response.json()
+        var newData = {}
+        newData[e.endpointPath] = jsonResponse
+        cache.data = { ...cache.data, ...newData }
         if (e.endpointList && e.endpointList.length !== 0) {
-          e.endpointList.forEach(path => {
+          for (var path of e.endpointList) {
             if (!e.baseURL) {
               throw new HttpErrors.PreconditionFailed('Error: invalid endpoint present')
             }
-            fetch(e.baseURL.concat(path), settings)
-              .then(response => response.json())
-              .then(response => this.updateData(cache.data, path, response))
-              .catch(error => console.log('Error: ', error))
-          })
+            response = await fetch(e.baseURL.concat(path), settings)
+            jsonResponse = await response.json()
+            cache.data[path] = jsonResponse
+          }
         }
       } else {
         settings = {
@@ -227,27 +240,23 @@ export class CacheController {
             "Authorization": collectionToken
           }
         }
-        fetch(e.baseURL.concat(e.endpointPath), settings)
-          .then(response => response.json())
-          .then(response => this.updateData(cache.data, e.endpointPath, response))
-          .catch(error => console.log('Error: ', error))
-
+        response = await fetch(e.baseURL.concat(e.endpointPath), settings)
+        jsonResponse = await response.json()
+        cache.data[e.endpointPath] = jsonResponse
         if (e.endpointList && e.endpointList.length !== 0) {
-          e.endpointList.forEach(path => {
+          for (var path of e.endpointList) {
             if (!e.baseURL) {
               throw new HttpErrors.PreconditionFailed('Error: invalid endpoint present')
             }
-            fetch(e.baseURL.concat(path), settings)
-              .then(response => response.json())
-              .then(response => this.updateData(cache.data, path, response))
-              .catch(error => console.log('Error: ', error))
-          })
+            response = await fetch(e.baseURL.concat(path), settings)
+            jsonResponse = await response.json()
+            cache.data[path] = jsonResponse
+          }
         }
       }
-    });
-    await this.cacheRepository.replaceById(id, cache).catch(async err => { await this.cacheRepository.create(cache) });
+    }
+    return cache
   }
-
   @authenticate('BasicStrategy')
   @del('/cache/{id}', {
     responses: {
