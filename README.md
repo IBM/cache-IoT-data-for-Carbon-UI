@@ -72,6 +72,8 @@ cacheLocation: String (must be either memory or db)
 }
 ```
 To create a new collection, send a POST request from Postman or using curl from terminal to the url 127.0.0.1:3000/collections with a JSON object that matches the above format (fields can be sent in any order in the object). For information on a particular collection, simply send a GET request to 127.0.0.1:3000/collections/{id}, where {id} is the ID number of the collection you would like to know more about.
+Example creation request:
+![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/Collection.png "Example collection")
 
 ### Endpoints
 Endpoints are how we store the actual APIs that we will be calling. Endpoints contain similar fields to the collection they belong to, however, certain fields will be inherited from the collection if omitted at the endpoint level. To create a new Endpoint, send a POST request to 127.0.0.1:3000/endpoints with the request body of the following format:
@@ -88,6 +90,8 @@ endpointList: String[] (NOT REQUIRED, if you so desire, you can pass an array of
 
 }
 ```
+Example endpoint creation:
+![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/Endpoint.png "Example endpoint")
 
 ### Cache
 This class is what is used as our data store for anything retrieved from our APIs. In order to refresh the data store, you can hit 127.0.0.1:3000/cache with a PUT request with a request body of the following format:
@@ -97,4 +101,7 @@ collectionID: Number (must correspond to an existing collection we'll be caching
 data: (NOT REQUIRED, simply leave it empty and the API with fill it with data, or you could pass data with the same schema)
 }
 ```
+The data for that collection will map every endpoint path to its corresponding API response.
+Example Cache creation with data schema and response:
+![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/Cache.png "Example cache")
 
