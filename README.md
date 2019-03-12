@@ -39,7 +39,9 @@ Now that your database is fully configured, simply clone the Github repository t
 npm install
 npm start
 ```
-With this, the server should be running locally on port 3000. Loopback also automatically generates a simple API explorer at 127.0.0.1:3000/explorer.
+With this, the server should be running locally on port 3000. Loopback also automatically generates a simple API explorer at 127.0.0.1:3000/explorer. See screenshots below for what successful server start should look like.
+![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/Explorer.png "API Explorer")
+![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/HomeScreen.png "Home Screen")
 
 ## The API
 
