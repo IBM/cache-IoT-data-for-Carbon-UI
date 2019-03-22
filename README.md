@@ -15,7 +15,7 @@ lb4 controller
 Each command generates an on-screen set of prompts that allow you to customize a set of JavaScript classes to create the framework for your API.
 
 ## Getting Started
-To start using the server, if you want to use a local version of Cloudant, download the cloudant-developer container available on the Loopback website at https://loopback.io/doc/en/lb4/Deploying-to-IBM-Cloud.html. From the Loopback docs, to run a Cloudant database locally at localhost:8080, run the following command:
+To start using the server, if you want to use a local version of Cloudant, download the cloudant-developer container via the the following command:
 ```
 docker run \
       --volume cloudant:/srv \
@@ -24,12 +24,17 @@ docker run \
       --hostname cloudant.dev \
       ibmcom/cloudant-developer
 ```
-This will have your local Cloudant image running at http://localhost:8080. The default login credentials are
+This will have your local Cloudant image running at http://localhost:8080/dashboard.html#. The default login credentials are
 ```
 username: admin
 password: pass
 ```
-For instructions on using Loopback to deploy to IBM Cloud, please see the link referenced above.
+To restart the Docker container if it stops, or your local machine restarts, simply use the command
+```
+docker start cloudant-developer
+```
+
+For instructions on using Loopback to deploy to IBM Cloud, see this link for more information: https://loopback.io/doc/en/lb4/Deploying-to-IBM-Cloud.html.
 
 Once your Cloudant database is configured, we will need to create 4 databases on your local database. See the image below to see what your database should look like once your database is ready to be used.
 ![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/DB.png "Database after creation")
@@ -48,11 +53,11 @@ With this, the server should be running locally on port 3000. Loopback also auto
 The API contains a few simple classes: Users, Collections, Endpoints, and the Cache.
 
 ### Users
-Users are a simple class that we use for authentication (it will matter more once the server is hosted on IBM Cloud). To register a new user is a simple POST request to the '/register/ endpoint. The request body should follow the format below:
+Users are a simple class that we use for authentication (it will matter more once the server is hosted on IBM Cloud). To register a new user is a simple POST request to the '/register/ endpoint. The request body should follow the example format below:
 ```
 {
-  username: {insert email}
-  password: {password}
+  "username": "Tony.Melo1@ibm.com",
+  "password": "example"
 }
 ```
 Upon successful registration, you can pass your username and password in the 'Authorization' header of requests when calling the API.
@@ -61,17 +66,18 @@ Upon successful registration, you can pass your username and password in the 'Au
 Collections represent the "higher" level information on a collection of APIs. Collections contain the following fields that are sent as JSON in the request body via POST requests:
 ```
 {
-collectionID: Number
-collectionName: String
-baseURL: String (this string corresponds to the base of the API you'd like to call e.g.
-https://iotbi-customdashboard.mybluemix.net/cache/allData?api=)
-authenticationType: String (must be either Basic or Bearer)
-refreshInterval: Number (you can store how often you'd like to refresh the collection here)
-credentials: Object (must contain a field for username and password, e.g. {username: Tony.Melo1@ibm.com, password: example})
-cacheLocation: String (must be either memory or db)
+"collectionID": String (example: "buildingInsights"),
+"collectionName": String (example: "estateAPIs"),
+"baseURL": String (this string corresponds to the base of the API you'd like to call e.g.
+"https://iotbi-customdashboard.mybluemix.net/cache/allData?api="),
+"authenticationType": String (must be either "Basic" or "Bearer"),
+"refreshInterval": Number (how often you'd like to refresh the collection, e.g. 60 => refresh every 60 seconds),
+"credentials": Object (must contain a field for username and password, e.g. 
+{"username": "Tony.Melo1@ibm.com", "password": "example"}),
+"cacheLocation": String (must be either "memory" or "db")
 }
 ```
-To create a new collection, send a POST request from Postman or using curl from terminal to the url 127.0.0.1:3000/collections with a JSON object that matches the above format (fields can be sent in any order in the object). For information on a particular collection, simply send a GET request to 127.0.0.1:3000/collections/{id}, where {id} is the ID number of the collection you would like to know more about.
+To create a new collection, send a POST request from Postman or using curl from terminal to the url 127.0.0.1:3000/collections with a JSON object that matches the above format (fields can be sent in any order in the object). For information on a particular collection, simply send a GET request to 127.0.0.1:3000/collections/{id}, where {id} is the ID number of the collection you would like to know more about. In order to properly perform a request, make sure to set the "Content-Type" header to be "application/json", and pass your registered credentials via Basic Auth.
 Example creation request:
 ![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/Collection.png "Example collection")
 
@@ -79,14 +85,14 @@ Example creation request:
 Endpoints are how we store the actual APIs that we will be calling. Endpoints contain similar fields to the collection they belong to, however, certain fields will be inherited from the collection if omitted at the endpoint level. To create a new Endpoint, send a POST request to 127.0.0.1:3000/endpoints with the request body of the following format:
 ```
 {
-endpointID: Number
-collectionID: Number (this should correspond to an existing collection you want the endpoint to belong to)
-endpointPath: String (this corresponds to a string like /v1/estate/energy/usage that is appended to the collection's baseURL)
-credentials: Object (NOT REQUIRED, will be inherited from the collection if omitted)
-refreshInterval: Number (NOT REQUIRED, will be inherited from the collection if omitted)
-authenticationType: String (NOT REQUIRED, will be inherited from the collection if omitted)
-baseURL: String (NOT REQUIRED, will be inherited from the collection if omitted)
-endpointList: String[] (NOT REQUIRED, if you so desire, you can pass an array of endpoint paths here instead of registering paths 1 by 1)
+"endpointID": String (example: "usage"),
+"collectionID": String (this should correspond to an existing collection you want the endpoint to belong to),
+"endpointPath": String (this corresponds to a string like "/v1/estate/energy/usage" that is appended to the collection's baseURL),
+"credentials": Object (NOT REQUIRED, will be inherited from the collection if omitted),
+"refreshInterval": Number (NOT REQUIRED, will be inherited from the collection if omitted),
+"authenticationType": String (NOT REQUIRED, will be inherited from the collection if omitted),
+"baseURL": String (NOT REQUIRED, will be inherited from the collection if omitted),
+"endpointList": String[] (NOT REQUIRED, if you so desire, you can pass an array of endpoint paths here instead of registering paths 1 by 1)
 
 }
 ```
@@ -94,11 +100,10 @@ Example endpoint creation:
 ![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/Endpoint.png "Example endpoint")
 
 ### Cache
-This class is what is used as our data store for anything retrieved from our APIs. In order to refresh the data store, you can hit 127.0.0.1:3000/cache with a PUT request with a request body of the following format:
+This class is what is used as our data store for anything retrieved from our APIs. In order to refresh the data store, you can hit 127.0.0.1:3000/cache with a POST request with a request body of the following format:
 ```
 {
-collectionID: Number (must correspond to an existing collection we'll be caching data for)
-data: (NOT REQUIRED, simply leave it empty and the API with fill it with data, or you could pass data with the same schema)
+"collectionID": String (must correspond to an existing collection we'll be caching data for)
 }
 ```
 The data for that collection will map every endpoint path to its corresponding API response.
