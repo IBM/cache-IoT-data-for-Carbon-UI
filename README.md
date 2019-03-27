@@ -61,6 +61,7 @@ Users are a simple class that we use for authentication (it will matter more onc
 }
 ```
 Upon successful registration, you can pass your username and password in the 'Authorization' header of requests when calling the API.
+![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/Authorization.png "Example basic authorization)
 
 ### Collections
 Collections represent the "higher" level information on a collection of APIs. Collections contain the following fields that are sent as JSON in the request body via POST requests:
@@ -79,6 +80,7 @@ Collections represent the "higher" level information on a collection of APIs. Co
 ```
 To create a new collection, send a POST request from Postman or using curl from terminal to the url 127.0.0.1:3000/collections with a JSON object that matches the above format (fields can be sent in any order in the object). For information on a particular collection, simply send a GET request to 127.0.0.1:3000/collections/{id}, where {id} is the ID number of the collection you would like to know more about. In order to properly perform a request, make sure to set the "Content-Type" header to be "application/json", and pass your registered credentials via Basic Auth.
 Example creation request:
+![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/Headers.png "Headers")
 ![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/Collection.png "Example collection")
 
 ### Endpoints
