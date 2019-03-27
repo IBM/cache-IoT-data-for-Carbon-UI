@@ -3,7 +3,8 @@
   "extends": "@loopback/build/config/tsconfig.common.json",
   "compilerOptions": {
     "rootDir": "src",
-    "noImplicitAny": false
+    "noImplicitAny": false,
+    "strictNullChecks": false
   },
   "include": [
     "src"

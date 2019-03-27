@@ -3,11 +3,11 @@ import { Entity, model, property } from '@loopback/repository';
 @model()
 export class Endpoint extends Entity {
   @property({
-    type: 'number',
+    type: 'string',
     id: true,
     required: true,
   })
-  endpointID: number;
+  endpointID: string;
 
   @property({
     type: 'string',
@@ -16,10 +16,10 @@ export class Endpoint extends Entity {
   endpointPath: string;
 
   @property({
-    type: 'number',
+    type: 'string',
     required: true,
   })
-  collectionID: number;
+  collectionID: string;
 
   @property({
     type: 'object',

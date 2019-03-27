@@ -56,7 +56,10 @@
     "@loopback/service-proxy": "^1.0.8",
     "loopback-connector-cloudant": "^2.2.1",
     "passport": "^0.4.0",
-    "passport-http": "^0.3.0"
+    "passport-http": "^0.3.0",
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.7",
+    "xmlhttprequest": "^1.8.0"
   },
   "devDependencies": {
     "@loopback/build": "^1.3.0",

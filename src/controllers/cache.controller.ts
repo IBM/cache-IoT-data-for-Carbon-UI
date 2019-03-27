@@ -25,6 +25,7 @@ import {
   UserProfile,
   authenticate,
 } from '@loopback/authentication';
+import * as request from 'request-promise-native';
 
 export class CacheController {
   constructor(
@@ -48,7 +49,6 @@ export class CacheController {
   })
   async create(@requestBody() cache: Cache) {
     var newCacheInstance = await this.cacheData(cache)
-    console.log(newCacheInstance)
     Object.assign(cache, newCacheInstance)
     return await this.cacheRepository.create(cache)
       .catch(async err => {
@@ -117,7 +117,7 @@ export class CacheController {
       },
     },
   })
-  async findById(@param.path.number('id') id: number): Promise<Cache> {
+  async findById(@param.path.string('id') id: string): Promise<Cache> {
     return await this.cacheRepository.findById(id);
   }
 
@@ -131,7 +131,7 @@ export class CacheController {
     },
   })
   async updateById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @requestBody() cache: Cache,
   ): Promise<void> {
     await this.cacheRepository.updateById(id, cache)
@@ -146,10 +146,24 @@ export class CacheController {
     },
   })
   async replaceById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @requestBody() cache: Cache,
   ): Promise<void> {
     await this.cacheRepository.replaceById(id, cache);
+  }
+
+  async makeRequest(partialOptions, requestURL, cacheData, key) {
+    var options = {
+      url: requestURL,
+      headers: partialOptions.headers,
+      auth: partialOptions.auth
+    }
+    var response = await request.get(options)
+    var jsonResponse = JSON.parse(response)
+    var newData = {}
+    newData[key] = jsonResponse
+    cacheData = { ...cacheData, ...newData }
+    return cacheData
   }
 
   async cacheData(cache?: Cache) {
@@ -157,10 +171,13 @@ export class CacheController {
       throw new HttpErrors.PreconditionFailed("Error: invalid cache instance")
     }
     let collection = await this.collectionRespository.findById(cache.collectionID)
-    let collectionToken;
-    let settings;
+    var useEndpointBase = true;
+    var useEndpointAuth = true;
+    var useEndpointCreds = true;
     var response;
-    var jsonResponse;
+    var options = {};
+    var url = '';
+    var collectionToken;
     if (!collection) {
       throw new HttpErrors.BadRequest(`Error: no collection was found with ID ${cache.collectionID}`)
     }
@@ -168,95 +185,200 @@ export class CacheController {
     if (!endpoints) {
       throw new HttpErrors.BadRequest(`Error: endpoints for collection ${cache.collectionID} could not be retrieved`)
     }
+
     if (collection.authenticationType.toLowerCase() === 'bearer') {
       for (var e of endpoints) {
         if (!e) {
           throw new HttpErrors.PreconditionFailed('Error: invalid endpoint present')
         }
+
+        if (!e.baseURL) {
+          useEndpointBase = false
+        }
+
+        if (!e.credentials) {
+          useEndpointCreds = false
+        } else if (!e.credentials['username']) {
+          useEndpointCreds = false
+        } else if (!e.credentials['password']) {
+          useEndpointCreds = false
+        }
+
+        if (useEndpointBase) {
+          url = e.baseURL.concat(e.endpointPath)
+        } else {
+          url = collection.baseURL.concat(e.endpointPath)
+        }
+
         if (e.endpointPath.includes('login')) {
-          settings = {
-            method: "POST",
-            body: JSON.stringify(e.credentials)
+          if (useEndpointCreds) {
+            options = {
+              body: JSON.stringify(e.credentials),
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            }
+          } else {
+            options = {
+              body: JSON.stringify(collection.credentials),
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            }
           }
-          if (!e.baseURL) {
-            throw new HttpErrors.PreconditionFailed('Error: invalid endpoint present')
-          }
-          response = await fetch(e.baseURL.concat(e.endpointPath), settings)
-          jsonResponse = await response.json()
+          var response = await request.post(options)
+          var jsonResponse = JSON.parse(response)
           collectionToken = "Bearer " + jsonResponse.data.token
         }
         return;
       };
-    } else {
-      var toEncode = Buffer.from(`${collection.credentials['username']}:${collection.credentials['password']}`);
-      var encoded = toEncode.toString('base64');
-      collectionToken = "Basic " + encoded;
     }
+
     for (var e of endpoints) {
       if (!e) {
         throw new HttpErrors.PreconditionFailed('Error: invalid endpoint present')
       }
-      if (!e.authenticationType) {
-        throw new HttpErrors.PreconditionFailed('Error: invalid endpoint present')
-      }
-      if (!e.baseURL) {
-        throw new HttpErrors.PreconditionFailed('Error: invalid endpoint present')
-      }
-      if (e.authenticationType.toLowerCase() === 'basic') {
-        if (!e.credentials) {
-          throw new HttpErrors.PreconditionFailed("Error: no credentials present")
-        }
-        var toEncode = Buffer.from(`${e.credentials['username']}:${e.credentials['password']}`);
-        var encoded = toEncode.toString('base64');
-        var basicToken = "Basic " + encoded;
-        settings = {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": basicToken
-          }
-        }
 
-        response = await fetch(e.baseURL.concat(e.endpointPath), settings)
-        jsonResponse = await response.json()
-        var newData = {}
-        newData[e.endpointPath] = jsonResponse
-        cache.data = { ...cache.data, ...newData }
-        if (e.endpointList && e.endpointList.length !== 0) {
-          for (var path of e.endpointList) {
-            if (!e.baseURL) {
-              throw new HttpErrors.PreconditionFailed('Error: invalid endpoint present')
+      if (!e.authenticationType) {
+        useEndpointAuth = false
+      }
+
+      if (!e.baseURL) {
+        useEndpointBase = false
+      }
+
+      if (!e.credentials) {
+        useEndpointCreds = false
+      } else if (!e.credentials['username']) {
+        useEndpointCreds = false
+      } else if (!e.credentials['password']) {
+        useEndpointCreds = false
+      }
+
+      if (useEndpointAuth) {
+        if (e.authenticationType.toLowerCase() === 'basic') {
+          if (useEndpointCreds) {
+            options['auth'] = {
+              'user': e.credentials['username'],
+              'pass': e.credentials['password']
             }
-            response = await fetch(e.baseURL.concat(path), settings)
-            jsonResponse = await response.json()
-            cache.data[path] = jsonResponse
+          } else {
+            options['auth'] = {
+              'user': collection.credentials['username'],
+              'pass': e.credentials['password']
+            }
+          }
+
+          if (useEndpointBase) {
+            url = e.baseURL.concat(e.endpointPath)
+          } else {
+            url = collection.baseURL.concat(e.endpointPath)
+          }
+
+          cache.data = await this.makeRequest(
+            options,
+            url,
+            cache.data,
+            e.endpointPath
+          )
+
+          if (e.endpointList && e.endpointList.length !== 0) {
+            for (var path of e.endpointList) {
+              if (useEndpointBase) {
+                url = e.baseURL.concat(path)
+              } else {
+                url = collection.baseURL.concat(path)
+              }
+
+              cache.data = await this.makeRequest(
+                options,
+                url,
+                cache.data,
+                e.endpointPath
+              )
+            }
+          }
+        } else {
+          options['auth'] = {
+            'bearer': collectionToken
+          }
+
+          if (useEndpointBase) {
+            url = e.baseURL.concat(e.endpointPath)
+          } else {
+            url = collection.baseURL.concat(e.endpointPath)
+          }
+
+          cache.data = await this.makeRequest(
+            options,
+            url,
+            cache.data,
+            e.endpointPath
+          )
+
+          if (e.endpointList && e.endpointList.length !== 0) {
+            for (var path of e.endpointList) {
+              if (useEndpointBase) {
+                url = e.baseURL.concat(e.endpointPath)
+              } else {
+                url = collection.baseURL.concat(e.endpointPath)
+              }
+
+              cache.data = await this.makeRequest(
+                options,
+                url,
+                cache.data,
+                e.endpointPath
+              )
+            }
           }
         }
       } else {
-        settings = {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": collectionToken
+        if (collection.authenticationType.toLowerCase() === 'bearer') {
+          options['auth'] = {
+            'bearer': collectionToken
+          }
+        } else {
+          options['auth'] = {
+            'user': collection.credentials['username'],
+            'pass': collection.credentials['password']
           }
         }
-        response = await fetch(e.baseURL.concat(e.endpointPath), settings)
-        jsonResponse = await response.json()
-        cache.data[e.endpointPath] = jsonResponse
+
+        if (useEndpointBase) {
+          url = e.baseURL.concat(e.endpointPath)
+        } else {
+          url = collection.baseURL.concat(e.endpointPath)
+        }
+
+        cache.data = await this.makeRequest(
+          options,
+          url,
+          cache.data,
+          e.endpointPath
+        )
+
         if (e.endpointList && e.endpointList.length !== 0) {
           for (var path of e.endpointList) {
-            if (!e.baseURL) {
-              throw new HttpErrors.PreconditionFailed('Error: invalid endpoint present')
+            if (useEndpointBase) {
+              url = e.baseURL.concat(e.endpointPath)
+            } else {
+              url = collection.baseURL.concat(e.endpointPath)
             }
-            response = await fetch(e.baseURL.concat(path), settings)
-            jsonResponse = await response.json()
-            cache.data[path] = jsonResponse
+
+            cache.data = await this.makeRequest(
+              options,
+              url,
+              cache.data,
+              e.endpointPath
+            )
           }
         }
       }
     }
     return cache
   }
+
   @authenticate('BasicStrategy')
   @del('/cache/{id}', {
     responses: {
@@ -265,7 +387,7 @@ export class CacheController {
       },
     },
   })
-  async deleteById(@param.path.number('id') id: number): Promise<void> {
+  async deleteById(@param.path.string('id') id: string): Promise<void> {
     await this.cacheRepository.deleteById(id);
   }
 }

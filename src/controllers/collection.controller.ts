@@ -38,8 +38,19 @@ export class CollectionController {
       throw new HttpErrors.BadRequest('Error: no collection given')
     }
 
-    if (collection.collectionID <= 0) {
-      throw new HttpErrors.BadRequest("Error: collectionID must be positive and nonzero")
+    switch (collection.collectionID) {
+      case null:
+        throw new HttpErrors.BadRequest("Error: collectionID was null")
+        break;
+      case undefined:
+        throw new HttpErrors.BadRequest("Error: collectionID was undefined")
+      case '':
+        throw new HttpErrors.BadRequest('Error: collectionID was empty')
+      default:
+        if (collection.collectionID.trim().length === 0) {
+          throw new HttpErrors.BadRequest("Error: collectionID cannot be only whitespace")
+        }
+        break;
     }
 
     if (collection.refreshInterval <= 0) {
@@ -209,7 +220,7 @@ export class CollectionController {
       },
     },
   })
-  async findById(@param.path.number('id') id: number): Promise<Collection> {
+  async findById(@param.path.string('id') id: string): Promise<Collection> {
     return await this.collectionRepository.findById(id);
   }
 
@@ -222,7 +233,7 @@ export class CollectionController {
     },
   })
   async updateById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @requestBody() collection: Collection,
   ): Promise<void> {
     await this.collectionRepository.updateById(id, collection);
@@ -237,7 +248,7 @@ export class CollectionController {
     },
   })
   async replaceById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @requestBody() collection: Collection,
   ): Promise<void> {
     await this.collectionRepository.replaceById(id, collection);
@@ -251,7 +262,7 @@ export class CollectionController {
       },
     },
   })
-  async deleteById(@param.path.number('id') id: number): Promise<void> {
+  async deleteById(@param.path.string('id') id: string): Promise<void> {
     await this.collectionRepository.deleteById(id);
   }
 }

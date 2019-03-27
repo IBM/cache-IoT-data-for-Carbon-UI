@@ -3,11 +3,11 @@ import { Entity, model, property } from '@loopback/repository';
 @model()
 export class Collection extends Entity {
   @property({
-    type: 'number',
+    type: 'string',
     id: true,
     required: true,
   })
-  collectionID: number;
+  collectionID: string;
 
   @property({
     type: 'string',

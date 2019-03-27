@@ -40,8 +40,19 @@ export class EndpointController {
       throw new HttpErrors.BadRequest("Error: no endpoint given")
     }
 
-    if (endpoint.endpointID <= 0) {
-      throw new HttpErrors.BadRequest('Error: endpoint must positive and nonzero')
+    switch (endpoint.endpointID) {
+      case null:
+        throw new HttpErrors.BadRequest("Error: baseURL was null")
+        break;
+      case undefined:
+        throw new HttpErrors.BadRequest("Error: baseURL was undefined")
+      case '':
+        throw new HttpErrors.BadRequest('Error: baseURL was empty')
+      default:
+        if (endpoint.endpointID.trim().length === 0) {
+          throw new HttpErrors.BadRequest("Error: baseURL cannot be only whitespace")
+        }
+        break;
     }
 
     switch (endpoint.endpointPath) {
@@ -66,9 +77,7 @@ export class EndpointController {
       throw new HttpErrors.BadRequest(`Error: no collection found with id ${endpoint.collectionID}`)
     }
 
-    if (!endpoint['baseURL']) {
-      endpoint['baseURL'] = collection['baseURL']
-    } else {
+    if (endpoint['baseURL']) {
       switch (endpoint.baseURL) {
         case null:
           throw new HttpErrors.BadRequest("Error: baseURL was null")
@@ -85,9 +94,7 @@ export class EndpointController {
       }
     }
 
-    if (!endpoint['authenticationType']) {
-      endpoint['authenticationType'] = collection['authenticationType']
-    } else {
+    if (endpoint['authenticationType']) {
       switch (endpoint.authenticationType.toLowerCase()) {
         case 'basic': case 'bearer':
           break;
@@ -96,17 +103,13 @@ export class EndpointController {
       }
     }
 
-    if (!endpoint['refreshInterval']) {
-      endpoint['refreshInterval'] = collection['refreshInterval']
-    } else {
+    if (endpoint['refreshInterval']) {
       if (endpoint.refreshInterval <= 0) {
         throw new HttpErrors.BadRequest("Error: refreshInterval must be positive and nonzero")
       }
     }
 
-    if (!endpoint['credentials']) {
-      endpoint['credentials'] = collection['credentials']
-    } else {
+    if (endpoint['credentials']) {
       if (!endpoint.credentials['username']) {
         throw new HttpErrors.BadRequest('Error: credentials does not contain a username')
       }
@@ -126,7 +129,7 @@ export class EndpointController {
           throw new HttpErrors.BadRequest('Error: username was empty')
           break;
         default:
-          if (endpoint.baseURL.trim().length === 0) {
+          if (endpoint.credentials['username'].trim().length === 0) {
             throw new HttpErrors.BadRequest("Error: username cannot be only whitespace")
           }
           break;
@@ -149,9 +152,7 @@ export class EndpointController {
           break;
       }
     }
-
     return endpoint
-
   }
 
   @authenticate('BasicStrategy')
@@ -228,7 +229,7 @@ export class EndpointController {
       },
     },
   })
-  async findById(@param.path.number('id') id: number): Promise<Endpoint> {
+  async findById(@param.path.string('id') id: string): Promise<Endpoint> {
     return await this.endpointRepository.findById(id);
   }
 
@@ -241,7 +242,7 @@ export class EndpointController {
     },
   })
   async updateById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @requestBody() endpoint: Endpoint,
   ): Promise<void> {
     await this.endpointRepository.updateById(id, endpoint);
@@ -256,7 +257,7 @@ export class EndpointController {
     },
   })
   async replaceById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @requestBody() endpoint: Endpoint,
   ): Promise<void> {
     await this.endpointRepository.replaceById(id, endpoint);
@@ -270,7 +271,7 @@ export class EndpointController {
       },
     },
   })
-  async deleteById(@param.path.number('id') id: number): Promise<void> {
+  async deleteById(@param.path.string('id') id: string): Promise<void> {
     await this.endpointRepository.deleteById(id);
   }
 }
