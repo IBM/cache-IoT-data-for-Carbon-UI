@@ -1,6 +1,6 @@
-import {Entity, model, property} from '@loopback/repository';
+import { Entity, model, property } from '@loopback/repository';
 
-@model()
+@model({ settings: { strict: true } })
 export class User extends Entity {
   @property({
     type: 'string',

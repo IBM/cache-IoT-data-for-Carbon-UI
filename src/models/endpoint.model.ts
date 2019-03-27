@@ -1,6 +1,6 @@
 import { Entity, model, property } from '@loopback/repository';
 
-@model()
+@model({ settings: { strict: true } })
 export class Endpoint extends Entity {
   @property({
     type: 'string',
