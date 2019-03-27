@@ -61,7 +61,7 @@ Users are a simple class that we use for authentication (it will matter more onc
 }
 ```
 Upon successful registration, you can pass your username and password in the 'Authorization' header of requests when calling the API.
-![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/Authorization.png "Example basic authorization)
+![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/Authorization.png "Example basic authorization")
 
 ### Collections
 Collections represent the "higher" level information on a collection of APIs. Collections contain the following fields that are sent as JSON in the request body via POST requests:
