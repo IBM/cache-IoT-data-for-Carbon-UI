@@ -1,9 +1,9 @@
 {
   "name": "endpoint",
   "connector": "cloudant",
-  "url": "http://admin:pass@localhost:8080",
+  "url": "https://5e037a1d-503d-4f1e-b261-52e0babfb6b9-bluemix.cloudant.com",
   "database": "endpoints",
-  "username": "admin",
-  "password": "pass",
+  "username": "ystrestaryholethistwitte",
+  "password": "cd9193e2f2ede4038aa7495924be41f96a772fd8",
   "modelIndex": ""
 }

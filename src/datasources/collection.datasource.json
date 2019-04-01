@@ -1,9 +1,9 @@
 {
   "name": "collection",
   "connector": "cloudant",
-  "url": "http://admin:pass@localhost:8080",
+  "url": "https://5e037a1d-503d-4f1e-b261-52e0babfb6b9-bluemix.cloudant.com",
   "database": "collections",
-  "username": "admin",
-  "password": "pass",
+  "username": "tionverereturlongstrocce",
+  "password": "4ad3d46829be1b3ee16d9b177eef36a67cd71d1a",
   "modelIndex": ""
 }
