@@ -37,6 +37,7 @@ export class UserController {
     return await this.userRepository.create(user);
   }
 
+  
   @get('/users/count', {
     responses: {
       '200': {

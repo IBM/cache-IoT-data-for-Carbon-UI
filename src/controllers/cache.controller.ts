@@ -158,11 +158,27 @@ export class CacheController {
       headers: partialOptions.headers,
       auth: partialOptions.auth
     }
-    var response = await request.get(options)
-    var jsonResponse = JSON.parse(response)
-    var newData = {}
-    newData[key] = jsonResponse
-    cacheData = { ...cacheData, ...newData }
+    var response = await request.get(options, function (error, response, body) {
+      if (response.statusCode < 400) {
+        console.log(`Successfully received response from ${requestURL} with code ${response.statusCode}`)
+      } else {
+        console.log(`Error: received ${response.statusCode} response from ${requestURL}`)
+      }
+    })
+    if (!response) {
+      return cacheData
+    }
+    try {
+      var jsonResponse = JSON.parse(response)
+      if (!jsonResponse) {
+        return cacheData
+      }
+      var newData = {}
+      newData[key] = jsonResponse
+      cacheData = { ...cacheData, ...newData }
+    } catch (error) {
+      console.log(`Error parsing response: ${response}`)
+    }
     return cacheData
   }
 
