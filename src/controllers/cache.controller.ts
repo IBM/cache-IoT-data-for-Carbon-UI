@@ -134,6 +134,82 @@ export class CacheController {
     @param.path.string('id') id: string,
     @requestBody() cache: Cache,
   ): Promise<void> {
+    var endpoint = await this.endpointRepository.findById(cache.endpointID)
+    var collection = await this.collectionRespository.findById(cache.collectionID)
+    var useEndpointBase = true;
+    var useEndpointAuth = true;
+    var useEndpointCreds = true;
+    var response;
+    var options = {};
+    var url = '';
+    var collectionToken;
+    if (!collection) {
+      throw new HttpErrors.BadRequest(`Error: no collection was found with ID ${cache.collectionID}`)
+    }
+    if (!endpoint) {
+      throw new HttpErrors.BadRequest(`Error: no endpoint was found with ID ${id}`)
+    }
+
+    if (!endpoint.authenticationType) {
+      useEndpointAuth = false
+    }
+
+    if (!endpoint.baseURL) {
+      useEndpointBase = false
+    }
+
+    if (!endpoint.credentials) {
+      useEndpointCreds = false
+    } else if (!endpoint.credentials['username']) {
+      useEndpointCreds = false
+    } else if (!endpoint.credentials['password']) {
+      useEndpointCreds = false
+    }
+
+    if (useEndpointAuth) {
+      if (useEndpointCreds) {
+        options['auth'] = {
+          'user': endpoint.credentials['username'],
+          'pass': endpoint.credentials['password']
+        }
+      } else {
+        options['auth'] = {
+          'user': collection.credentials['username'],
+          'pass': endpoint.credentials['password']
+        }
+      }
+
+      if (useEndpointBase) {
+        url = endpoint.baseURL.concat(endpoint.endpointPath)
+      } else {
+        url = collection.baseURL.concat(endpoint.endpointPath)
+      }
+
+      cache.data = await this.makeRequest(
+        options,
+        url,
+        cache.data,
+        endpoint.endpointPath
+      )
+    } else {
+      options['auth'] = {
+        'user': collection.credentials['username'],
+        'pass': collection.credentials['password']
+      }
+      if (useEndpointBase) {
+        url = endpoint.baseURL.concat(endpoint.endpointPath)
+      } else {
+        url = collection.baseURL.concat(endpoint.endpointPath)
+      }
+
+      cache.data = await this.makeRequest(
+        options,
+        url,
+        cache.data,
+        endpoint.endpointPath
+      )
+
+    }
     await this.cacheRepository.updateById(id, cache)
   }
 
