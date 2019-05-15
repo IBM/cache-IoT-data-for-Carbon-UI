@@ -34,7 +34,7 @@ export class CacheController {
     @repository(EndpointRepository)
     private endpointRepository: EndpointRepository,
     @repository(CollectionRepository)
-    private collectionRespository: CollectionRepository,
+    private collectionRepository: CollectionRepository,
     @inject(AuthenticationBindings.CURRENT_USER) private user: UserProfile,
   ) { }
 
@@ -135,7 +135,7 @@ export class CacheController {
     @requestBody() cache: Cache,
   ): Promise<void> {
     var endpoint = await this.endpointRepository.findById(cache.endpointID)
-    var collection = await this.collectionRespository.findById(cache.collectionID)
+    var collection = await this.collectionRepository.findById(cache.collectionID)
     var useEndpointBase = true;
     var useEndpointAuth = true;
     var useEndpointCreds = true;
@@ -262,7 +262,7 @@ export class CacheController {
     if (!cache) {
       throw new HttpErrors.PreconditionFailed("Error: invalid cache instance")
     }
-    let collection = await this.collectionRespository.findById(cache.collectionID)
+    let collection = await this.collectionRepository.findById(cache.collectionID)
     var useEndpointBase = true;
     var useEndpointAuth = true;
     var useEndpointCreds = true;
