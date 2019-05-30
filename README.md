@@ -1,21 +1,68 @@
-# UI Data Server
+# API caching server for quick Carbon Design System front-ends
 
-## The Stack
+This code pattern demonstrates an API caching server that can reside between your Carbon Design System based front-end and External API's, and can help with building quick and efficient interfaces using IBM Carbon UI. The pattern showcases a Node.js server built using Loopback.io that the front-end of an application would communicate with, and which interacts with an IBM Cloudant database that holds information about the external API's that your application must communicate with to load its UI components.
 
-The server was written in JavaScript / TypeScript / Node.JS using Loopback.io, an extensive Node.JS framework that allows for the easy creation of APIs. The server was connected to a Cloudant database using Loopback's built in Cloudant Connector. The Cloudant database can be hosted on IBM Cloud or locally using a Docker container that is pre-built and easily configured. For the purposes of this document, I'll be assuming the Cloudant database is run locally.
+When the reader has completed this code pattern, they will understand how to:
 
-Much of the base code is generated using Loopback's generator functions. For example, to create a Loopback model with associated datasource, repository, and controller, we follow this simple order of commands which we can then modify as we please.
+* Create a Node.js and Loopback.io backend server
+* Create API's using Loopback.io
+* Setup IBM Cloudant and interface with Loopback.io
+* Run IBM cloudant database locally
 
+# Architecture Flow
+
+<p align="center">
+  <img src="docs/doc-images/arch-flow.png">
+</p>
+
+1. User authenticates to API Server through Carbon Design System based front-end
+2. Front-end makes request data to be visualized from REST API
+3. API Server makes request to external API with stored credentials for that API
+4. If...
+   1. there is a good response, the API Server receives new data and caches, then sends it to the front-end
+   2. there is a bad response, the API server retrieves previously cached and returns THAT to the front-end
+5. On a given interval, the API server refreshes the data it has stored for the collections of APIs it has information on
+
+# Included Components
+
+* [IBM Carbon Design System](https://www.carbondesignsystem.com) is IBM’s open-source design system for products and experiences. With the IBM Design Language as its foundation, the system consists of working code, design tools and resources, human interface guidelines, and a vibrant community of contributors.
+* [IBM Cloudant](https://www.ibm.com/cloud/cloudant) is a fully managed, scalable distributed database that gives you more time to focus on what matters – building your product.
+
+## Featured technology
++ [Node.js](https://nodejs.org) is an open source, cross-platform JavaScript run-time environment that executes server-side JavaScript code.
++ [Loopback.io](https://loopback.io/) LoopBack is a highly extensible, open-source Node.js framework based on Express that enables you to quickly create dynamic end-to-end REST APIs and connect to backend systems such as databases and SOAP or REST services.
++ [Docker](https://www.docker.com/) independent container platform that enables organizations to seamlessly build, share and run any application, anywhere—from hybrid cloud to the edge.
++ [Postman](https://www.getpostman.com/) is the only complete API development environment, and flexibly integrates with the software development cycle.
+
+## Running the application locally
+
+Follow these steps to set up and run this code pattern. The steps are described in detail below.
+
+### Prerequisites
+
+- [Node v8.x or greater and npm v5.x or greater](https://nodejs.org/en/download/)
+- [Docker version v17.06.2-ce or greater](https://www.docker.com/get-docker)
+- [Docker Compose v1.14.0 or greater](https://docs.docker.com/compose/install/)
+- [Download Postman](https://www.getpostman.com/)
+
+### Steps
+1. [Clone the repository](#1-clone-the-repository)
+2. [Setup cloudant database](#2-setup-cloudant-database)
+3. [Run the application](#3-run-the-application)
+4. [The API](#4-the-api)
+
+## 1. Clone the repository
+
+Clone this repository in a folder your choice:
+
+```bash
+git clone https://github.com/IBM/customer-loyalty-program-hyperledger-fabric-VSCode.git
+cd customer-loyalty-program-hyperledger-fabric-VSCode
 ```
-lb4 model
-lb4 datasource
-lb4 repository
-lb4 controller
-```
-Each command generates an on-screen set of prompts that allow you to customize a set of JavaScript classes to create the framework for your API.
 
-## Getting Started
-To start using the server, if you want to use a local version of Cloudant, download the cloudant-developer container via the the following command:
+## 2. Setup cloudant database
+
+If you want to use a local version of Cloudant, download the cloudant-developer container via the the following command:
 ```
 docker run \
       --volume cloudant:/srv \
@@ -38,8 +85,11 @@ For instructions on using Loopback to deploy to IBM Cloud, see this link for mor
 
 Once your Cloudant database is configured, we will need to create 4 databases on your local database. See the image below to see what your database should look like once your database is ready to be used.
 ![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/DB.png "Database after creation")
- 
-Now that your database is fully configured, simply clone the Github repository to your local machine and run the following command at the root level of the project to install all necessary dependencies.
+
+
+## 3. Run the application
+
+Run the following command at the root level of the project to install all necessary dependencies.
 ```
 npm install
 npm start
@@ -48,7 +98,7 @@ With this, the server should be running locally on port 3000. Loopback also auto
 ![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/Explorer.png "API Explorer")
 ![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/HomeScreen.png "Home Screen")
 
-## The API
+## 4. The API
 
 The API contains a few simple classes: Users, Collections, Endpoints, and the Cache.
 
@@ -112,3 +162,12 @@ The data for that collection will map every endpoint path to its corresponding A
 Example Cache creation with data schema and response:
 ![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/Cache.png "Example cache")
 
+
+## Links
+* [IBM Carbon Design System tutorial](http://www.carbondesignsystem.com/tutorial/overview)
+* [IBM Code Patterns for Node.js](https://developer.ibm.com/patterns/category/node-js/)
+
+## License
+This code pattern is licensed under the Apache Software License, Version 2. Separate third-party code objects invoked within this code pattern are licensed by their respective providers pursuant to their own separate licenses. Contributions are subject to the [Developer Certificate of Origin, Version 1.1 (DCO)](https://developercertificate.org/) and the [Apache Software License, Version 2](https://www.apache.org/licenses/LICENSE-2.0.txt).
+
+[Apache Software License (ASL) FAQ](https://www.apache.org/foundation/license-faq.html#WhatDoesItMEAN)
