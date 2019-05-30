@@ -43,13 +43,13 @@ When the reader has completed this code pattern, they will understand how to:
 
 ![Architecture flow](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/docs/doc-images/arch-flow.png?raw=true)
 
-1. User authenticates to API Server through Carbon Design System based front-end.
-2. Front-end makes request data to be visualized from REST API.
-3. API Server makes request to external API with stored credentials for that API.
-4. If 
-  a. there is a good response, the API Server receives new data and caches, then sends it to the front-end.
-  b. there is a bad response, the API server retrieves previously cached and returns THAT to the front-end.
-5. On a given interval, the API server refreshes the data it has stored for the collections of APIs it has information on.
+1. User authenticates to API Server through Carbon Design System based front-end
+2. Front-end makes request data to be visualized from REST API
+3. API Server makes request to external API with stored credentials for that API
+4. If...
+   1. there is a good response, the API Server receives new data and caches, then sends it to the front-end
+   2. there is a bad response, the API server retrieves previously cached and returns THAT to the front-end
+5. On a given interval, the API server refreshes the data it has stored for the collections of APIs it has information on
 
 # Components and services
 
