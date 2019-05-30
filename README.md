@@ -56,8 +56,8 @@ Follow these steps to set up and run this code pattern. The steps are described 
 Clone this repository in a folder your choice:
 
 ```bash
-git clone https://github.com/IBM/customer-loyalty-program-hyperledger-fabric-VSCode.git
-cd customer-loyalty-program-hyperledger-fabric-VSCode
+git clone https://github.com/ash7594/API-caching-server-for-Carbon-UI.git
+cd API-caching-server-for-Carbon-UI
 ```
 
 ## 2. Setup cloudant database
@@ -84,8 +84,10 @@ docker start cloudant-developer
 For instructions on using Loopback to deploy to IBM Cloud, see this link for more information: https://loopback.io/doc/en/lb4/Deploying-to-IBM-Cloud.html.
 
 Once your Cloudant database is configured, we will need to create 4 databases on your local database. See the image below to see what your database should look like once your database is ready to be used.
-![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/DB.png "Database after creation")
 
+<p align="center">
+  <img src="docs/doc-images/DB.png">
+</p>
 
 ## 3. Run the application
 
@@ -95,8 +97,14 @@ npm install
 npm start
 ```
 With this, the server should be running locally on port 3000. Loopback also automatically generates a simple API explorer at 127.0.0.1:3000/explorer. See screenshots below for what successful server start should look like.
-![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/Explorer.png "API Explorer")
-![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/HomeScreen.png "Home Screen")
+
+<p align="center">
+  <img src="docs/doc-images/Explorer.png">
+</p>
+
+<p align="center">
+  <img src="docs/doc-images/HomeScreen.png">
+</p>
 
 ## 4. The API
 
@@ -111,7 +119,10 @@ Users are a simple class that we use for authentication (it will matter more onc
 }
 ```
 Upon successful registration, you can pass your username and password in the 'Authorization' header of requests when calling the API.
-![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/Authorization.png "Example basic authorization")
+
+<p align="center">
+  <img src="docs/doc-images/Authorization.png">
+</p>
 
 ### Collections
 Collections represent the "higher" level information on a collection of APIs. Collections contain the following fields that are sent as JSON in the request body via POST requests:
@@ -130,8 +141,14 @@ Collections represent the "higher" level information on a collection of APIs. Co
 ```
 To create a new collection, send a POST request from Postman or using curl from terminal to the url 127.0.0.1:3000/collections with a JSON object that matches the above format (fields can be sent in any order in the object). For information on a particular collection, simply send a GET request to 127.0.0.1:3000/collections/{id}, where {id} is the ID number of the collection you would like to know more about. In order to properly perform a request, make sure to set the "Content-Type" header to be "application/json", and pass your registered credentials via Basic Auth.
 Example creation request:
-![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/Headers.png "Headers")
-![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/Collection.png "Example collection")
+
+<p align="center">
+  <img src="docs/doc-images/Headers.png">
+</p>
+
+<p align="center">
+  <img src="docs/doc-images/Collection.png">
+</p>
 
 ### Endpoints
 Endpoints are how we store the actual APIs that we will be calling. Endpoints contain similar fields to the collection they belong to, however, certain fields will be inherited from the collection if omitted at the endpoint level. To create a new Endpoint, send a POST request to 127.0.0.1:3000/endpoints with the request body of the following format:
@@ -149,7 +166,10 @@ Endpoints are how we store the actual APIs that we will be calling. Endpoints co
 }
 ```
 Example endpoint creation:
-![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/Endpoint.png "Example endpoint")
+
+<p align="center">
+  <img src="docs/doc-images/Endpoint.png">
+</p>
 
 ### Cache
 This class is what is used as our data store for anything retrieved from our APIs. In order to refresh the data store, you can hit 127.0.0.1:3000/cache with a POST request with a request body of the following format:
@@ -160,8 +180,10 @@ This class is what is used as our data store for anything retrieved from our API
 ```
 The data for that collection will map every endpoint path to its corresponding API response.
 Example Cache creation with data schema and response:
-![alt-text](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/public/Cache.png "Example cache")
 
+<p align="center">
+  <img src="docs/doc-images/Cache.png">
+</p>
 
 ## Links
 * [IBM Carbon Design System tutorial](http://www.carbondesignsystem.com/tutorial/overview)

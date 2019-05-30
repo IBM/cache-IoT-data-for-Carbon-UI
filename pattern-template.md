@@ -41,7 +41,9 @@ When the reader has completed this code pattern, they will understand how to:
 
 # Flow
 
-![Architecture flow](https://github.ibm.com/Tony-Melo1/UI-server/blob/master/docs/doc-images/arch-flow.png?raw=true)
+<p align="center">
+  <img src="docs/doc-images/arch-flow.png">
+</p>
 
 1. User authenticates to API Server through Carbon Design System based front-end
 2. Front-end makes request data to be visualized from REST API
