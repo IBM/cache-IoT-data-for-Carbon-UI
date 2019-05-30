@@ -17,8 +17,8 @@ import {
   requestBody,
   HttpErrors
 } from '@loopback/rest';
-import { Collection } from '../models';
-import { CollectionRepository } from '../repositories';
+import { Collection, Cache } from '../models';
+import { CacheRepository, EndpointRepository, CollectionRepository } from '../repositories';
 import { inject } from '@loopback/context';
 import {
   AuthenticationBindings,
@@ -28,6 +28,10 @@ import {
 
 export class CollectionController {
   constructor(
+    @repository(CacheRepository)
+    public cacheRepository: CacheRepository,
+    @repository(EndpointRepository)
+    public endpointRepository: EndpointRepository,
     @repository(CollectionRepository)
     public collectionRepository: CollectionRepository,
     @inject(AuthenticationBindings.CURRENT_USER) private user: UserProfile,
@@ -158,7 +162,267 @@ export class CollectionController {
   })
   async create(@requestBody() collection: Collection): Promise<Collection> {
     this.validate(collection)
-    return await this.collectionRepository.create(collection);
+    await this.collectionRepository.create(collection);
+
+    // How do we handle multiple post requests with the same collectionId? I see the validation does not do this.
+    // Do we not worry about this case?
+    setInterval(refreshIntervalCache.bind(this, collection), collection.refreshInterval)
+    return;
+  }
+
+  async refreshIntervalCache(collection) {
+    let cache = new Cache({ collectionID: collection.collectionID })
+    let newCacheInstance = await this.cacheData(cache)
+    Object.assign(cache, newCacheInstance)
+    
+    return await this.cacheRepository.create(cache)
+      .catch(async err => {
+        await this.cacheRepository.updateById(cache.collectionID, cache)
+        return cache;
+      });
+  }
+
+  async makeRequest(partialOptions, requestURL, cacheData, key) {
+    var options = {
+      url: requestURL,
+      headers: partialOptions.headers,
+      auth: partialOptions.auth
+    }
+    var response = await request.get(options, function (error, response, body) {
+      if (response.statusCode < 400) {
+        console.log(`Successfully received response from ${requestURL} with code ${response.statusCode}`)
+      } else {
+        console.log(`Error: received ${response.statusCode} response from ${requestURL}`)
+      }
+    })
+    if (!response) {
+      return cacheData
+    }
+    try {
+      var jsonResponse = JSON.parse(response)
+      if (!jsonResponse) {
+        return cacheData
+      }
+      var newData = {}
+      newData[key] = jsonResponse
+      cacheData = { ...cacheData, ...newData }
+    } catch (error) {
+      console.log(`Error parsing response: ${response}`)
+    }
+    return cacheData
+  }
+
+  async cacheData(cache?: Cache) {
+    if (!cache) {
+      throw new HttpErrors.PreconditionFailed("Error: invalid cache instance")
+    }
+    let collection = await this.collectionRepository.findById(cache.collectionID)
+    var useEndpointBase = true;
+    var useEndpointAuth = true;
+    var useEndpointCreds = true;
+    var response;
+    var options = {};
+    var url = '';
+    var collectionToken;
+    if (!collection) {
+      throw new HttpErrors.BadRequest(`Error: no collection was found with ID ${cache.collectionID}`)
+    }
+    let endpoints = await this.endpointRepository.find({ where: { collectionID: cache.collectionID } })
+    if (!endpoints) {
+      throw new HttpErrors.BadRequest(`Error: endpoints for collection ${cache.collectionID} could not be retrieved`)
+    }
+
+    if (collection.authenticationType.toLowerCase() === 'bearer') {
+      for (var e of endpoints) {
+        if (!e) {
+          throw new HttpErrors.PreconditionFailed('Error: invalid endpoint present')
+        }
+
+        if (!e.baseURL) {
+          useEndpointBase = false
+        }
+
+        if (!e.credentials) {
+          useEndpointCreds = false
+        } else if (!e.credentials['username']) {
+          useEndpointCreds = false
+        } else if (!e.credentials['password']) {
+          useEndpointCreds = false
+        }
+
+        if (useEndpointBase) {
+          url = e.baseURL.concat(e.endpointPath)
+        } else {
+          url = collection.baseURL.concat(e.endpointPath)
+        }
+
+        if (e.endpointPath.includes('login')) {
+          if (useEndpointCreds) {
+            options = {
+              body: JSON.stringify(e.credentials),
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            }
+          } else {
+            options = {
+              body: JSON.stringify(collection.credentials),
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            }
+          }
+          var response = await request.post(options)
+          var jsonResponse = JSON.parse(response)
+          collectionToken = "Bearer " + jsonResponse.data.token
+        }
+        return;
+      };
+    }
+
+    for (var e of endpoints) {
+      if (!e) {
+        throw new HttpErrors.PreconditionFailed('Error: invalid endpoint present')
+      }
+
+      if (!e.authenticationType) {
+        useEndpointAuth = false
+      }
+
+      if (!e.baseURL) {
+        useEndpointBase = false
+      }
+
+      if (!e.credentials) {
+        useEndpointCreds = false
+      } else if (!e.credentials['username']) {
+        useEndpointCreds = false
+      } else if (!e.credentials['password']) {
+        useEndpointCreds = false
+      }
+
+      if (useEndpointAuth) {
+        if (e.authenticationType.toLowerCase() === 'basic') {
+          if (useEndpointCreds) {
+            options['auth'] = {
+              'user': e.credentials['username'],
+              'pass': e.credentials['password']
+            }
+          } else {
+            options['auth'] = {
+              'user': collection.credentials['username'],
+              'pass': e.credentials['password']
+            }
+          }
+
+          if (useEndpointBase) {
+            url = e.baseURL.concat(e.endpointPath)
+          } else {
+            url = collection.baseURL.concat(e.endpointPath)
+          }
+
+          cache.data = await this.makeRequest(
+            options,
+            url,
+            cache.data,
+            e.endpointPath
+          )
+
+          if (e.endpointList && e.endpointList.length !== 0) {
+            for (var path of e.endpointList) {
+              if (useEndpointBase) {
+                url = e.baseURL.concat(path)
+              } else {
+                url = collection.baseURL.concat(path)
+              }
+
+              cache.data = await this.makeRequest(
+                options,
+                url,
+                cache.data,
+                e.endpointPath
+              )
+            }
+          }
+        } else {
+          options['auth'] = {
+            'bearer': collectionToken
+          }
+
+          if (useEndpointBase) {
+            url = e.baseURL.concat(e.endpointPath)
+          } else {
+            url = collection.baseURL.concat(e.endpointPath)
+          }
+
+          cache.data = await this.makeRequest(
+            options,
+            url,
+            cache.data,
+            e.endpointPath
+          )
+
+          if (e.endpointList && e.endpointList.length !== 0) {
+            for (var path of e.endpointList) {
+              if (useEndpointBase) {
+                url = e.baseURL.concat(e.endpointPath)
+              } else {
+                url = collection.baseURL.concat(e.endpointPath)
+              }
+
+              cache.data = await this.makeRequest(
+                options,
+                url,
+                cache.data,
+                e.endpointPath
+              )
+            }
+          }
+        }
+      } else {
+        if (collection.authenticationType.toLowerCase() === 'bearer') {
+          options['auth'] = {
+            'bearer': collectionToken
+          }
+        } else {
+          options['auth'] = {
+            'user': collection.credentials['username'],
+            'pass': collection.credentials['password']
+          }
+        }
+
+        if (useEndpointBase) {
+          url = e.baseURL.concat(e.endpointPath)
+        } else {
+          url = collection.baseURL.concat(e.endpointPath)
+        }
+
+        cache.data = await this.makeRequest(
+          options,
+          url,
+          cache.data,
+          e.endpointPath
+        )
+
+        if (e.endpointList && e.endpointList.length !== 0) {
+          for (var path of e.endpointList) {
+            if (useEndpointBase) {
+              url = e.baseURL.concat(e.endpointPath)
+            } else {
+              url = collection.baseURL.concat(e.endpointPath)
+            }
+
+            cache.data = await this.makeRequest(
+              options,
+              url,
+              cache.data,
+              e.endpointPath
+            )
+          }
+        }
+      }
+    }
+    return cache
   }
 
   @authenticate('BasicStrategy')
