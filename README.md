@@ -1,6 +1,6 @@
-# API caching server for quick Carbon Design System front-ends
+# Cache IoT device data for quick Carbon Design System front-ends
 
-This code pattern demonstrates an API caching server that can reside between your Carbon Design System based front-end and External API's, and can help with building quick and efficient interfaces using IBM Carbon UI. The pattern showcases a Node.js server built using Loopback.io that the front-end of an application would communicate with, and which interacts with an IBM Cloudant database that holds information about the external API's that your application must communicate with to load its UI components.
+This code pattern demonstrates an API caching server that can reside between your Carbon Design System based front-end and the API's for your IoT device data, and can help with building quick and efficient interfaces using IBM Carbon UI. The pattern showcases a Node.js server built using Loopback.io that the front-end of an application would communicate with, and which interacts with an IBM Cloudant database that holds information about your IoT device so that your application has cached data even when intermittent communication failures occur with the IoT device.
 
 When the reader has completed this code pattern, they will understand how to:
 
@@ -8,6 +8,7 @@ When the reader has completed this code pattern, they will understand how to:
 * Create API's using Loopback.io
 * Setup IBM Cloudant and interface with Loopback.io
 * Run IBM cloudant database locally
+* Setup a mock IOT device on Internet of Things Platform
 
 # Architecture Flow
 
@@ -17,7 +18,7 @@ When the reader has completed this code pattern, they will understand how to:
 
 1. User authenticates to API Server through Carbon Design System based front-end
 2. Front-end makes request data to be visualized from REST API
-3. API Server makes request to external API with stored credentials for that API
+3. API Server makes request to IoT device data API with stored credentials for that API
 4. If...
    1. there is a good response, the API Server receives new data and caches, then sends it to the front-end
    2. there is a bad response, the API server retrieves previously cached and returns THAT to the front-end
@@ -27,6 +28,7 @@ When the reader has completed this code pattern, they will understand how to:
 
 * [IBM Carbon Design System](https://www.carbondesignsystem.com) is IBM’s open-source design system for products and experiences. With the IBM Design Language as its foundation, the system consists of working code, design tools and resources, human interface guidelines, and a vibrant community of contributors.
 * [IBM Cloudant](https://www.ibm.com/cloud/cloudant) is a fully managed, scalable distributed database that gives you more time to focus on what matters – building your product.
+* [IBM Internet of Things Platform](https://cloud.ibm.com/catalog/services/internet-of-things-platform) - Securely connect, control, and manage devices. Quickly build IoT applications that analyze data from the physical world.
 
 ## Featured technology
 + [Node.js](https://nodejs.org) is an open source, cross-platform JavaScript run-time environment that executes server-side JavaScript code.
@@ -48,16 +50,17 @@ Follow these steps to set up and run this code pattern. The steps are described 
 ### Steps
 1. [Clone the repository](#1-clone-the-repository)
 2. [Setup cloudant database](#2-setup-cloudant-database)
-3. [Run the application](#3-run-the-application)
-4. [The API](#4-the-api)
+3. [Setup mock IoT device](#3-setup-mock-iot-device)
+4. [Run the application](#4-run-the-application)
+5. [The API](#5-the-api)
 
 ## 1. Clone the repository
 
 Clone this repository in a folder your choice:
 
 ```bash
-git clone https://github.com/ash7594/API-caching-server-for-Carbon-UI.git
-cd API-caching-server-for-Carbon-UI
+git clone https://github.com/IBM/cache-IoT-data-for-Carbon-UI.git
+cd cache-IoT-data-for-Carbon-UI
 ```
 
 ## 2. Setup cloudant database
@@ -89,7 +92,49 @@ Once your Cloudant database is configured, we will need to create 4 databases on
   <img src="docs/doc-images/DB.png">
 </p>
 
-## 3. Run the application
+## 3. Setup mock IoT device
+
+Provision a lite plan of the [IBM Internet of Things Platform](https://cloud.ibm.com/catalog/services/internet-of-things-platform).
+
+<p align="center">
+  <img src="docs/doc-images/iotp-provision.png">
+</p>
+
+Navigate to `Settings` -> `Device Simulator`, and toggle the `Activate Device Simulator` button.
+
+<p align="center">
+  <img src="docs/doc-images/iotp-settings.png">
+</p>
+
+<p align="center">
+  <img src="docs/doc-images/iotp-toggle-activate.png">
+</p>
+
+Click on the panel `0 Simulations running`, and create a simulation called `mydevice`.
+
+<p align="center">
+  <img src="docs/doc-images/iotp-create-simulation.png">
+</p>
+
+<p align="center">
+  <img src="docs/doc-images/iotp-simulation.png">
+</p>
+
+Click on `Create simulated device` to simulate an IoT device.
+
+<p align="center">
+  <img src="docs/doc-images/iotp-create-device.png">
+</p>
+
+You can view your new mock IoT device transmitting data under `Browse Devices`.
+
+<p align="center">
+  <img src="docs/doc-images/iotp-device-info.png">
+</p>
+
+Now, access the device data over `HTTP`, and use the data URL for caching for the next steps.
+
+## 4. Run the application
 
 Run the following command at the root level of the project to install all necessary dependencies.
 ```
@@ -106,7 +151,7 @@ With this, the server should be running locally on port 3000. Loopback also auto
   <img src="docs/doc-images/HomeScreen.png">
 </p>
 
-## 4. The API
+## 5. The API
 
 The API contains a few simple classes: Users, Collections, Endpoints, and the Cache.
 
